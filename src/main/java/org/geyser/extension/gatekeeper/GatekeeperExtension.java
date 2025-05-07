@@ -13,7 +13,6 @@ import java.nio.file.*;
 import java.util.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.UUID;
 
 import org.yaml.snakeyaml.Yaml;
 
@@ -24,7 +23,6 @@ public class GatekeeperExtension implements Extension {
     private Path configPath;
     private Path whitelistPath;
 
-    // NO @Override here!
     public void onEnable() {
         configPath = this.dataFolder().resolve("config.yml");
         whitelistPath = Paths.get("whitelist.json");
@@ -46,9 +44,9 @@ public class GatekeeperExtension implements Extension {
     @Subscribe
     public void onBedrockSessionLogin(SessionLoginEvent event) {
         String username = event.connection().javaUsername();
-        UUID uuid = event.connection().javaUniqueId();
+        String xuid = event.connection().xuid();
 
-        FloodgatePlayer player = FloodgateApi.getInstance().getPlayer(uuid);
+        FloodgatePlayer player = FloodgateApi.getInstance().getPlayer(xuid);
 
         String deviceOs = "UNKNOWN";
         if (player != null) {
@@ -65,7 +63,8 @@ public class GatekeeperExtension implements Extension {
         }
 
         if (disallowedOS.contains(deviceOs.toUpperCase())) {
-            event.disconnect(kickMessage);
+            event.cancel();
+            event.reason(kickMessage);
             logger().info("Kicked player " + username + " for using device OS: " + deviceOs);
         }
     }
