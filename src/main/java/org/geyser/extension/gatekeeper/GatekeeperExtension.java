@@ -46,7 +46,7 @@ public class GatekeeperExtension implements Extension {
         String username = event.connection().javaUsername();
         String xuid = event.connection().xuid();
 
-        FloodgatePlayer player = FloodgateApi.getInstance().getPlayer(xuid);
+        FloodgatePlayer player = FloodgateApi.getInstance().getPlayerByXuid(xuid);
 
         String deviceOs = "UNKNOWN";
         if (player != null) {
@@ -63,8 +63,8 @@ public class GatekeeperExtension implements Extension {
         }
 
         if (disallowedOS.contains(deviceOs.toUpperCase())) {
-            event.cancel();
-            event.reason(kickMessage);
+            event.setCancelled(true);
+            event.setKickReason(kickMessage);
             logger().info("Kicked player " + username + " for using device OS: " + deviceOs);
         }
     }
