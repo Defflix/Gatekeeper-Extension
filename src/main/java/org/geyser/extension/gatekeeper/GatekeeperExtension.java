@@ -44,19 +44,16 @@ public class GatekeeperExtension implements Extension {
     @Subscribe
     public void onBedrockSessionLogin(SessionLoginEvent event) {
         String username = event.connection().javaUsername();
-
-        // Try to get UUID if available (some Geyser builds may provide this)
-        FloodgatePlayer player = null;
+        UUID uuid = null;
         try {
-            UUID uuid = event.connection().uuid();
-            player = FloodgateApi.getInstance().getPlayer(uuid);
+            uuid = event.connection().javaUniqueId();
         } catch (Throwable t) {
-            // Fallback to username-based lookup for Floodgate
-            try {
-                player = FloodgateApi.getInstance().getPlayer(username);
-            } catch (Throwable ignored) {
-                // No Floodgate or not a Floodgate player
-            }
+            // Not available in this API version
+        }
+
+        FloodgatePlayer player = null;
+        if (uuid != null && FloodgateApi.getInstance().isFloodgatePlayer(uuid)) {
+            player = FloodgateApi.getInstance().getPlayer(uuid);
         }
 
         String deviceOs = "UNKNOWN";
@@ -75,15 +72,6 @@ public class GatekeeperExtension implements Extension {
 
         if (disallowedOS.contains(deviceOs.toUpperCase())) {
             event.setCancelled(true);
-            // Try both methods for setting the kick message
-            boolean kicked = false;
-            try {
-                event.kickMessage(kickMessage);
-                kicked = true;
-            } catch (Throwable ignored) {}
-            try {
-                if (!kicked) event.setKickMessage(kickMessage);
-            } catch (Throwable ignored) {}
             logger().info("Kicked player " + username + " for using device OS: " + deviceOs);
         }
     }
