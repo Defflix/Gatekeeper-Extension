@@ -44,17 +44,8 @@ public class GatekeeperExtension implements Extension {
     @Subscribe
     public void onBedrockSessionLogin(SessionLoginEvent event) {
         String username = event.connection().javaUsername();
-        UUID uuid = null;
-        try {
-            uuid = event.connection().javaUniqueId();
-        } catch (Throwable t) {
-            // Not available in this API version
-        }
 
-        FloodgatePlayer player = null;
-        if (uuid != null && FloodgateApi.getInstance().isFloodgatePlayer(uuid)) {
-            player = FloodgateApi.getInstance().getPlayer(uuid);
-        }
+        FloodgatePlayer player = FloodgateApi.getInstance().getPlayer(username);
 
         String deviceOs = "UNKNOWN";
         if (player != null) {
