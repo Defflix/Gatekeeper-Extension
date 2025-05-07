@@ -1,8 +1,7 @@
 package org.geyser.extension.gatekeeper;
 
 import org.geysermc.event.subscribe.Subscribe;
-// Use the actual event present in your API!
-import org.geysermc.geyser.api.event.connection.GeyserLoginEvent;
+import org.geysermc.geyser.api.event.bedrock.SessionLoginEvent;
 import org.geysermc.geyser.api.event.lifecycle.GeyserPostInitializeEvent;
 import org.geysermc.geyser.api.event.lifecycle.GeyserPreReloadEvent;
 import org.geysermc.geyser.api.extension.Extension;
@@ -25,6 +24,7 @@ public class GatekeeperExtension implements Extension {
     private Path configPath;
     private Path whitelistPath;
 
+    // NO @Override here!
     public void onEnable() {
         configPath = this.dataFolder().resolve("config.yml");
         whitelistPath = Paths.get("whitelist.json");
@@ -44,7 +44,7 @@ public class GatekeeperExtension implements Extension {
     }
 
     @Subscribe
-    public void onBedrockPlayerLogin(GeyserLoginEvent event) {
+    public void onBedrockSessionLogin(SessionLoginEvent event) {
         String username = event.connection().javaUsername();
         UUID uuid = event.connection().javaUniqueId();
 
