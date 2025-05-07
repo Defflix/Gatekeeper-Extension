@@ -2,6 +2,7 @@ package org.geyser.extension.gatekeeper;
 
 import org.geysermc.event.subscribe.Subscribe;
 import org.geysermc.geyser.api.event.bedrock.SessionLoginEvent;
+import org.geysermc.geyser.api.event.bedrock.GeyserAuthenticationResult;
 import org.geysermc.geyser.api.event.lifecycle.GeyserPostInitializeEvent;
 import org.geysermc.geyser.api.event.lifecycle.GeyserPreReloadEvent;
 import org.geysermc.geyser.api.extension.Extension;
@@ -44,13 +45,13 @@ public class GatekeeperExtension implements Extension {
     @Subscribe
     public void onBedrockSessionLogin(SessionLoginEvent event) {
         String username = event.connection().javaUsername();
-        String xuid = event.connection().xuid();
 
-        FloodgatePlayer player = FloodgateApi.getInstance().getPlayerByXuid(xuid);
+        // Floodgate API: get FloodgatePlayer by username (Bedrock username)
+        FloodgatePlayer player = FloodgateApi.getInstance().getPlayer(username);
 
         String deviceOs = "UNKNOWN";
         if (player != null) {
-            deviceOs = player.getDeviceOs().toString();
+            deviceOs = player.getDeviceOs().name();
         } else {
             logger().info("Floodgate player not found for " + username + ". Device OS set to UNKNOWN.");
         }
@@ -63,8 +64,7 @@ public class GatekeeperExtension implements Extension {
         }
 
         if (disallowedOS.contains(deviceOs.toUpperCase())) {
-            event.setCancelled(true);
-            event.setKickReason(kickMessage);
+            event.setAuthenticationResult(GeyserAuthenticationResult.failure(kickMessage));
             logger().info("Kicked player " + username + " for using device OS: " + deviceOs);
         }
     }
