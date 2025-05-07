@@ -17,6 +17,7 @@ repositories {
 dependencies {
     // Geyser API - needed for all extensions
     compileOnly("org.geysermc.geyser:api:$geyserApiVersion-SNAPSHOT")
+    implementation("org.yaml:snakeyaml:2.0") // or latest
 
     // Include other dependencies here - e.g. configuration libraries.
 }
