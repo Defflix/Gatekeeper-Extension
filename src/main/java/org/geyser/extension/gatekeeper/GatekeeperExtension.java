@@ -1,12 +1,14 @@
 package org.geyser.extension.gatekeeper;
 
 import org.geysermc.event.subscribe.Subscribe;
-import org.geysermc.geyser.api.event.connection.BedrockLoginEvent;
+import org.geysermc.geyser.api.GeyserApi;
+import org.geysermc.geyser.api.command.CommandSource;
+import org.geysermc.geyser.api.connection.GeyserConnection;
+import org.geysermc.geyser.api.device.DeviceOs;
+import org.geysermc.geyser.api.event.connection.PlayerAuthenticateEvent;
 import org.geysermc.geyser.api.event.lifecycle.GeyserPostInitializeEvent;
 import org.geysermc.geyser.api.event.lifecycle.GeyserPreReloadEvent;
 import org.geysermc.geyser.api.extension.Extension;
-import org.geysermc.geyser.api.GeyserApi;
-import org.geysermc.geyser.api.connection.Connection;
 
 import java.nio.file.*;
 import java.util.*;
@@ -44,21 +46,23 @@ public class GatekeeperExtension implements Extension {
     }
 
     @Subscribe
-    public void onBedrockLogin(BedrockLoginEvent event) {
-        Connection conn = event.connection();
+    public void onPlayerAuthenticate(PlayerAuthenticateEvent event) {
+        GeyserConnection conn = event.connection();
         String username = conn.javaUsername();
-        String deviceOS = event.deviceOs().name();
-        logger().info("Player " + username + " is joining from device OS: " + deviceOS);
+        DeviceOs deviceOs = conn.deviceOs();
+
+        logger().info("Player " + username + " is joining from device OS: " + deviceOs);
 
         if (vanillaWhitelist.contains(username)) {
             logger().info("Player " + username + " is whitelisted, skipping OS check.");
             return;
         }
 
-        if (disallowedOS.contains(deviceOS)) {
-            // Use /kick command (requires server to be running and command to be available)
-            GeyserApi.api().server().dispatchCommand("kick " + username + " " + kickMessage);
-            logger().info("Kicked player " + username + " for using device OS: " + deviceOS);
+        if (disallowedOS.contains(deviceOs.name())) {
+            // Kick the user with a custom message.
+            // There is no cross-platform command dispatcher, but you can disconnect with a message:
+            event.disconnect(kickMessage);
+            logger().info("Kicked player " + username + " for using device OS: " + deviceOs);
         }
     }
 
