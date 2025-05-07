@@ -1,0 +1,4 @@
+disallowed_os:
+  - UWP
+  - UNKNOWN
+kick_message: "You are not allowed to join from this device!"
