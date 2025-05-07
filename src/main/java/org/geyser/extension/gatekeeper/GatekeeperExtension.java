@@ -1,7 +1,8 @@
 package org.geyser.extension.gatekeeper;
 
 import org.geysermc.event.subscribe.Subscribe;
-import org.geysermc.geyser.api.event.connection.BedrockPlayerLoginEvent;
+// Use the actual event present in your API!
+import org.geysermc.geyser.api.event.connection.GeyserLoginEvent;
 import org.geysermc.geyser.api.event.lifecycle.GeyserPostInitializeEvent;
 import org.geysermc.geyser.api.event.lifecycle.GeyserPreReloadEvent;
 import org.geysermc.geyser.api.extension.Extension;
@@ -13,6 +14,7 @@ import java.nio.file.*;
 import java.util.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 import org.yaml.snakeyaml.Yaml;
 
@@ -23,7 +25,6 @@ public class GatekeeperExtension implements Extension {
     private Path configPath;
     private Path whitelistPath;
 
-    @Override
     public void onEnable() {
         configPath = this.dataFolder().resolve("config.yml");
         whitelistPath = Paths.get("whitelist.json");
@@ -43,18 +44,17 @@ public class GatekeeperExtension implements Extension {
     }
 
     @Subscribe
-    public void onBedrockPlayerLogin(BedrockPlayerLoginEvent event) {
+    public void onBedrockPlayerLogin(GeyserLoginEvent event) {
         String username = event.connection().javaUsername();
+        UUID uuid = event.connection().javaUniqueId();
 
-        // Use Floodgate API to get player info
-        FloodgateApi floodgateApi = FloodgateApi.getInstance();
-        FloodgatePlayer player = floodgateApi.getPlayer(username);
+        FloodgatePlayer player = FloodgateApi.getInstance().getPlayer(uuid);
 
         String deviceOs = "UNKNOWN";
         if (player != null) {
             deviceOs = player.getDeviceOs().toString();
         } else {
-            logger().warn("Floodgate player not found for " + username + ". Device OS set to UNKNOWN.");
+            logger().info("Floodgate player not found for " + username + ". Device OS set to UNKNOWN.");
         }
 
         logger().info("Player " + username + " is joining from device OS: " + deviceOs);
