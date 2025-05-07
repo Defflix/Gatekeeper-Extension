@@ -1,14 +1,13 @@
 package org.geyser.extension.gatekeeper;
 
 import org.geysermc.event.subscribe.Subscribe;
-import org.geysermc.geyser.api.GeyserApi;
-import org.geysermc.geyser.api.command.CommandSource;
-import org.geysermc.geyser.api.connection.GeyserConnection;
-import org.geysermc.geyser.api.device.DeviceOs;
-import org.geysermc.geyser.api.event.connection.PlayerAuthenticateEvent;
+import org.geysermc.geyser.api.event.connection.BedrockPlayerLoginEvent;
 import org.geysermc.geyser.api.event.lifecycle.GeyserPostInitializeEvent;
 import org.geysermc.geyser.api.event.lifecycle.GeyserPreReloadEvent;
 import org.geysermc.geyser.api.extension.Extension;
+
+import org.geysermc.floodgate.api.FloodgateApi;
+import org.geysermc.floodgate.api.player.FloodgatePlayer;
 
 import java.nio.file.*;
 import java.util.*;
@@ -34,9 +33,7 @@ public class GatekeeperExtension implements Extension {
     }
 
     @Subscribe
-    public void onPostInitialize(GeyserPostInitializeEvent event) {
-        // Optionally, watch the whitelist file for changes here with a thread or a file watcher.
-    }
+    public void onPostInitialize(GeyserPostInitializeEvent event) {}
 
     @Subscribe
     public void onReload(GeyserPreReloadEvent event) {
@@ -46,10 +43,19 @@ public class GatekeeperExtension implements Extension {
     }
 
     @Subscribe
-    public void onPlayerAuthenticate(PlayerAuthenticateEvent event) {
-        GeyserConnection conn = event.connection();
-        String username = conn.javaUsername();
-        DeviceOs deviceOs = conn.deviceOs();
+    public void onBedrockPlayerLogin(BedrockPlayerLoginEvent event) {
+        String username = event.connection().javaUsername();
+
+        // Use Floodgate API to get player info
+        FloodgateApi floodgateApi = FloodgateApi.getInstance();
+        FloodgatePlayer player = floodgateApi.getPlayer(username);
+
+        String deviceOs = "UNKNOWN";
+        if (player != null) {
+            deviceOs = player.getDeviceOs().toString();
+        } else {
+            logger().warn("Floodgate player not found for " + username + ". Device OS set to UNKNOWN.");
+        }
 
         logger().info("Player " + username + " is joining from device OS: " + deviceOs);
 
@@ -58,9 +64,7 @@ public class GatekeeperExtension implements Extension {
             return;
         }
 
-        if (disallowedOS.contains(deviceOs.name())) {
-            // Kick the user with a custom message.
-            // There is no cross-platform command dispatcher, but you can disconnect with a message:
+        if (disallowedOS.contains(deviceOs.toUpperCase())) {
             event.disconnect(kickMessage);
             logger().info("Kicked player " + username + " for using device OS: " + deviceOs);
         }
@@ -102,9 +106,7 @@ public class GatekeeperExtension implements Extension {
         vanillaWhitelist.clear();
         if (Files.exists(whitelistPath)) {
             try (Reader reader = Files.newBufferedReader(whitelistPath, StandardCharsets.UTF_8)) {
-                // Each entry is an object with a 'name' field
                 String json = new String(Files.readAllBytes(whitelistPath));
-                // Simple and hacky parse to extract all "name" fields
                 int idx = 0;
                 while ((idx = json.indexOf("\"name\"", idx)) != -1) {
                     int start = json.indexOf(":", idx) + 1;
